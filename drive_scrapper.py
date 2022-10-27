@@ -27,8 +27,7 @@ def main():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
         with open('token.json', 'w') as token:
@@ -38,10 +37,9 @@ def main():
         service = build('drive', 'v3', credentials=creds)
 
         # Call the Drive v3 API
-        results = service.files().list(
-            pageSize=10, fields="nextPageToken, files(id, name)").execute()
+        results = service.files().list(pageSize=10, fields="nextPageToken, files(id, name)").execute()
         items = results.get('files', [])
-
+        
         if not items:
             print('No files found.')
             return
