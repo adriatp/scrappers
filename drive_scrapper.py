@@ -2,6 +2,9 @@ from __future__ import print_function
 
 import os.path
 
+import json
+import io
+
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -9,8 +12,9 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
+SCOPES = ['https://www.googleapis.com/auth/drive']
 
+folderId = '1w2Zwq0FBjSXAPVWYY0SePyn3OfxAMGGi'
 
 def main():
     """Shows basic usage of the Drive v3 API.
@@ -37,17 +41,23 @@ def main():
         service = build('drive', 'v3', credentials=creds)
 
         # Call the Drive v3 API
-        results = service.files().list(pageSize=10, fields="nextPageToken, files(id, name)").execute()
+        results = service.files().list(q="trashed = false and parents in '" + folderId + "'", 
+                                       fields="nextPageToken, files(id, name)", 
+                                       spaces='drive').execute()
         items = results.get('files', [])
-        
         if not items:
             print('No files found.')
             return
-        print('Files:')
+        print(u'Merging {0} files'.format(len(items)))
+        ofs = []
         for item in items:
             print(u'{0} ({1})'.format(item['name'], item['id']))
+            ofs.append(json.loads(service.files().get_media(fileId=item['id']).execute()))
+        ofs_str = json.dumps(ofs, indent=4)
+        with io.open('data.json', 'w', encoding='utf8') as outfile:
+            outfile.write(ofs_str)
+
     except HttpError as error:
-        # TODO(developer) - Handle errors from drive API.
         print(f'An error occurred: {error}')
 
 
